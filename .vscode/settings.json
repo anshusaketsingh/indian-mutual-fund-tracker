@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": "/opt/anaconda3/envs/dev_base/bin/python",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true
+}
