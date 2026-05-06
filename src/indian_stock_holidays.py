@@ -545,7 +545,7 @@ class IndianStockHolidayScraper:
         # Create data directory if it doesn't exist
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(script_dir)  # One level up to reach project root
-        cache_dir = os.path.join(project_root, 'data', 'cache_files')
+        cache_dir = os.path.join(project_root, 'data')
         os.makedirs(cache_dir, exist_ok=True)
         
         # Set pickle file path to data/cache_files folder
@@ -936,8 +936,8 @@ def main():
     # Full path to the Output Directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)  # One level up to reach project root
-    excel_dir = os.path.join(project_root, 'output', 'excel_files')
-    os.makedirs(excel_dir, exist_ok=True)
+    output_dir = os.path.join(project_root, 'output')
+    os.makedirs(output_dir, exist_ok=True)
 
     
     # Example 1: Export wide range to Excel
@@ -945,7 +945,7 @@ def main():
     print("\n" + "="*60)
     print("EXAMPLE 1: Export HSensex Holidays to Excel")
     print("="*60)   
-    excel_file_path = os.path.join(excel_dir, 'Sensex_Holidays.xlsx')
+    excel_file_path = os.path.join(output_dir, 'Sensex_Holidays.xlsx')
     scraper.export_to_excel(
         excel_file_path,
         start_date='2000-01-01',

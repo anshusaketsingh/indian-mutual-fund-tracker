@@ -1,0 +1,4 @@
+*.xlsx
+*.hyper
+nav_data_cache.pkl
+.DS_Store
