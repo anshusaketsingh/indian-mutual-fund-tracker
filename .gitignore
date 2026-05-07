@@ -2,3 +2,5 @@
 *.hyper
 nav_data_cache.pkl
 .DS_Store
+**/.DS_Store
+data/cache_metadata.json

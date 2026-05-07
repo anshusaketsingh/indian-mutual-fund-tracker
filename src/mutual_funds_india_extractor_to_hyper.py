@@ -976,7 +976,7 @@ if __name__ == "__main__":
 
     extractor.show_cache_growth_benefits()
 
-    extractor.extract_fund_data(start_date="2026-05-01")
+    extractor.extract_fund_data(start_date="2010-01-01")
 
     extractor.get_cache_stats()
     extractor.check_cache_health()
