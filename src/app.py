@@ -72,20 +72,24 @@ if st.button("Start Extraction"):
                 s_date = start_date.strftime("%Y-%m-%d")
                 e_date = end_date.strftime("%Y-%m-%d")
                 
+                s_date_str = start_date.strftime("%Y%m%d")
+                e_date_str = end_date.strftime("%Y%m%d")
+                base_name = f"Sensex_Holidays_{s_date_str}_{e_date_str}"
+                
                 df = scraper.get_holidays_dataframe(start_date=s_date, end_date=e_date)
                 if not df.empty:
                     if "csv" in export_formats:
-                        df.to_csv(str(run_output_dir / "Sensex_Holidays.csv"), index=False)
+                        df.to_csv(str(run_output_dir / f"{base_name}.csv"), index=False)
                     if "parquet" in export_formats:
-                        df.to_parquet(str(run_output_dir / "Sensex_Holidays.parquet"), index=False)
+                        df.to_parquet(str(run_output_dir / f"{base_name}.parquet"), index=False)
                     if "sqlite" in export_formats:
                         import sqlite3
-                        conn = sqlite3.connect(str(run_output_dir / "Sensex_Holidays.sqlite"))
+                        conn = sqlite3.connect(str(run_output_dir / f"{base_name}.sqlite"))
                         df.to_sql("holidays", conn, if_exists="replace", index=False)
                         conn.close()
                     if "hyper" in export_formats:
                         import pantab
-                        pantab.frames_to_hyper({"holidays": df}, str(run_output_dir / "Sensex_Holidays.hyper"))
+                        pantab.frames_to_hyper({"holidays": df}, str(run_output_dir / f"{base_name}.hyper"))
                 
                 h_bar.progress(1.0)
                 hol_progress_text.text("Sensex Holidays: Complete!")

@@ -89,25 +89,30 @@ def main():
     
     s_date = args.start_date if args.start_date else "2007-01-01"
     e_date = args.end_date if args.end_date else f"{datetime.now().year}-12-31"
+    
+    s_date_str = s_date.replace("-", "")
+    e_date_str = e_date.replace("-", "")
+    base_name = f"Sensex_Holidays_{s_date_str}_{e_date_str}"
+    
     df = scraper.get_holidays_dataframe(start_date=s_date, end_date=e_date)
     
     if not df.empty:
         if "csv" in args.format:
-            df.to_csv(str(output_dir / "Sensex_Holidays.csv"), index=False)
-            print(f"Exported holidays to {output_dir / 'Sensex_Holidays.csv'}")
+            df.to_csv(str(output_dir / f"{base_name}.csv"), index=False)
+            print(f"Exported holidays to {output_dir / f'{base_name}.csv'}")
         if "parquet" in args.format:
-            df.to_parquet(str(output_dir / "Sensex_Holidays.parquet"), index=False)
-            print(f"Exported holidays to {output_dir / 'Sensex_Holidays.parquet'}")
+            df.to_parquet(str(output_dir / f"{base_name}.parquet"), index=False)
+            print(f"Exported holidays to {output_dir / f'{base_name}.parquet'}")
         if "sqlite" in args.format:
             import sqlite3
-            conn = sqlite3.connect(str(output_dir / "Sensex_Holidays.sqlite"))
+            conn = sqlite3.connect(str(output_dir / f"{base_name}.sqlite"))
             df.to_sql("holidays", conn, if_exists="replace", index=False)
             conn.close()
-            print(f"Exported holidays to {output_dir / 'Sensex_Holidays.sqlite'}")
+            print(f"Exported holidays to {output_dir / f'{base_name}.sqlite'}")
         if "hyper" in args.format:
             import pantab
-            pantab.frames_to_hyper({"holidays": df}, str(output_dir / "Sensex_Holidays.hyper"))
-            print(f"Exported holidays to {output_dir / 'Sensex_Holidays.hyper'}")
+            pantab.frames_to_hyper({"holidays": df}, str(output_dir / f"{base_name}.hyper"))
+            print(f"Exported holidays to {output_dir / f'{base_name}.hyper'}")
 
     pipeline = DataPipeline(max_workers=args.workers, output_dir=str(output_dir))
     pipeline.run(
