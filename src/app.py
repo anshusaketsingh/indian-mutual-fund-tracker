@@ -82,14 +82,6 @@ if st.button("Start Extraction"):
                         df.to_csv(str(run_output_dir / f"{base_name}.csv"), index=False)
                     if "parquet" in export_formats:
                         df.to_parquet(str(run_output_dir / f"{base_name}.parquet"), index=False)
-                    if "sqlite" in export_formats:
-                        import sqlite3
-                        conn = sqlite3.connect(str(run_output_dir / f"{base_name}.sqlite"))
-                        df.to_sql("holidays", conn, if_exists="replace", index=False)
-                        conn.close()
-                    if "hyper" in export_formats:
-                        import pantab
-                        pantab.frames_to_hyper({"holidays": df}, str(run_output_dir / f"{base_name}.hyper"))
                 
                 h_bar.progress(1.0)
                 hol_progress_text.text("Sensex Holidays: Complete!")
@@ -127,7 +119,8 @@ if st.button("Start Extraction"):
                     start_date=start_date.strftime("%Y-%m-%d"),
                     end_date=end_date.strftime("%Y-%m-%d"),
                     output_formats=export_formats,
-                    progress_callback=combined_cb
+                    progress_callback=combined_cb,
+                    holidays_df=df if extract_holidays else None
                 )
             m_bar.progress(1.0)
             meta_progress_text.text("Metadata: Complete!")

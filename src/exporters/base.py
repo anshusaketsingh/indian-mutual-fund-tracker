@@ -13,6 +13,6 @@ class BaseExporter(ABC):
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     @abstractmethod
-    def export(self, metadata_df: pd.DataFrame, nav_df: pd.DataFrame, filename: str) -> bool:
+    def export(self, metadata_df: pd.DataFrame, nav_df: pd.DataFrame, filename: str, holidays_df: pd.DataFrame = None) -> bool:
         """Export the DataFrames to the specified file format."""
         pass

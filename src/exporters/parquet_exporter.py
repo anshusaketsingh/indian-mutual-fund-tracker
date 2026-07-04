@@ -7,7 +7,7 @@ import pandas as pd
 from .base import BaseExporter
 
 class ParquetExporter(BaseExporter):
-    def export(self, metadata_df: pd.DataFrame, nav_df: pd.DataFrame, filename: str) -> bool:
+    def export(self, metadata_df: pd.DataFrame, nav_df: pd.DataFrame, filename: str, holidays_df: pd.DataFrame = None) -> bool:
         output_filepath = str(self.output_dir / filename)
         print(f"\nCreating Parquet file: {output_filepath}")
         try:

@@ -53,7 +53,7 @@ python src/main.py
 
 ### Command Line Interface (CLI)
 
-Use the `src/main.py` entry point to trigger the optimized mutual fund extractor. It natively tracks progress using `tqdm` and leverages a 12-hour freshness window on the Parquet cache to skip redundant API calls.
+Use the `src/main.py` entry point to trigger the optimized mutual fund extractor. It natively tracks progress using `tqdm` and leverages a 15-day freshness window on the Parquet cache to skip redundant API calls.
 
 ```bash
 # Export as Tableau Hyper (default)
@@ -118,5 +118,5 @@ flowchart TD
 The system uses a highly optimized, accumulative Parquet caching architecture in the `data/` directory.
 
 - **Speed:** Caching allows repeated executions to drop from ~30 minutes down to just a few seconds.
-- **Freshness:** The pipeline automatically tracks cache staleness via `cache_metadata.json` and skips the AMFI API entirely if data was fetched in the last 12 hours.
+- **Freshness:** The pipeline automatically tracks cache staleness via `cache_metadata.json` and skips the AMFI API entirely if data was fetched in the last 15 days.
 - **Persistence:** Historical NAV values never change. The cache acts as an append-only time series and does not require manual invalidation.

@@ -1,6 +1,8 @@
 # Data and Output directories
 data/
 output/
+scratch/
+tableau_workbook/
 
 # Logs
 hyperd.log

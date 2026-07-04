@@ -27,7 +27,7 @@ class DataPipeline:
             "hyper": HyperExporter(output_dir)
         }
 
-    def run(self, start_date=None, end_date=None, output_formats=["hyper"], progress_callback=None):
+    def run(self, start_date=None, end_date=None, output_formats=["hyper"], progress_callback=None, holidays_df=None):
         print("======================================================================")
         print("MUTUAL FUND DATA EXTRACTION PIPELINE")
         print("======================================================================")
@@ -56,11 +56,11 @@ class DataPipeline:
         safe_end   = end_date.replace("-", "") if isinstance(end_date, str) else "Now"
         if isinstance(start_date, datetime): safe_start = start_date.strftime("%Y%m%d")
         if isinstance(end_date, datetime):   safe_end = end_date.strftime("%Y%m%d")
-        base_name = f"AllFunds_Daily_{safe_start}_{safe_end}"
+        base_name = f"Indian_Mutual_Funds_NAV_{safe_start}_{safe_end}"
 
         for fmt in set(f.lower().strip() for f in output_formats):
             if fmt in self.exporters:
-                self.exporters[fmt].export(metadata_df, nav_df, f"{base_name}.{fmt}")
+                self.exporters[fmt].export(metadata_df, nav_df, f"{base_name}.{fmt}", holidays_df)
             else:
                 print(f"Warning: Unknown format '{fmt}' requested.")
 

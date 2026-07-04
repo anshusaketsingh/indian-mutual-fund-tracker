@@ -103,22 +103,13 @@ def main():
         if "parquet" in args.format:
             df.to_parquet(str(output_dir / f"{base_name}.parquet"), index=False)
             print(f"Exported holidays to {output_dir / f'{base_name}.parquet'}")
-        if "sqlite" in args.format:
-            import sqlite3
-            conn = sqlite3.connect(str(output_dir / f"{base_name}.sqlite"))
-            df.to_sql("holidays", conn, if_exists="replace", index=False)
-            conn.close()
-            print(f"Exported holidays to {output_dir / f'{base_name}.sqlite'}")
-        if "hyper" in args.format:
-            import pantab
-            pantab.frames_to_hyper({"holidays": df}, str(output_dir / f"{base_name}.hyper"))
-            print(f"Exported holidays to {output_dir / f'{base_name}.hyper'}")
 
     pipeline = DataPipeline(max_workers=args.workers, output_dir=str(output_dir))
     pipeline.run(
         start_date=args.start_date,
         end_date=args.end_date,
-        output_formats=args.format
+        output_formats=args.format,
+        holidays_df=df
     )
 
 if __name__ == "__main__":

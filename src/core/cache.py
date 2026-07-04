@@ -56,9 +56,11 @@ class CacheManager:
                     with open(self.cache_metadata_file) as f:
                         meta = json.load(f)
                     self.last_cache_update = meta.get('last_updated')
+                    self.oldest_synced_date = meta.get('oldest_synced_date', '9999-12-31')
                 except Exception:
-                    pass
+                    self.oldest_synced_date = '9999-12-31'
             return df
+        self.oldest_synced_date = '9999-12-31'
         return pd.DataFrame(columns=["Scheme_Code", "Date", "NAV"])
 
     def save_nav_cache(self):
@@ -81,6 +83,7 @@ class CacheManager:
                     "schemes_cached": unique_schemes,
                     "total_records": total_records,
                     "cache_policy": "parquet_accumulative",
+                    "oldest_synced_date": getattr(self, 'oldest_synced_date', '9999-12-31')
                 }
                 with open(self.cache_metadata_file, "w") as f:
                     json.dump(meta, f, indent=2)

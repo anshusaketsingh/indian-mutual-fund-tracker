@@ -11,7 +11,7 @@ from tableauhyperapi import (
 from .base import BaseExporter
 
 class HyperExporter(BaseExporter):
-    def export(self, metadata_df: pd.DataFrame, nav_df: pd.DataFrame, filename: str) -> bool:
+    def export(self, metadata_df: pd.DataFrame, nav_df: pd.DataFrame, filename: str, holidays_df: pd.DataFrame = None) -> bool:
         output_filepath = str(self.output_dir / filename)
         print(f"\nCreating Tableau Hyper file: {output_filepath}")
 
@@ -115,6 +115,13 @@ class HyperExporter(BaseExporter):
                         print(f"Inserted {len(nav_insert)} NAV records.")
 
             print(f"Hyper file created: {output_filepath}")
+            
+            # Append holidays using pantab for convenience if provided
+            if holidays_df is not None and not holidays_df.empty:
+                import pantab
+                print("Appending Sensex Holidays to Hyper file...")
+                pantab.frames_to_hyper({"Indian_Sensex_Holiday": holidays_df}, output_filepath, table_mode="a")
+                
             return True
         except Exception as e:
             print(f"Error creating Hyper file: {e}")

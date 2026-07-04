@@ -142,11 +142,18 @@ class NavFetcher:
                 latest_dates = full_cache_subset.groupby("Scheme_Code")["Date"].max().to_dict()
                 earliest_dates = full_cache_subset.groupby("Scheme_Code")["Date"].min().to_dict()
 
-        is_fresh = self.cache.is_cache_fresh(hours=12)
+        is_fresh = self.cache.is_cache_fresh(hours=360)  # 15 days
         schemes_to_fetch = []
         
         for code in scheme_codes:
             if code not in latest_dates:
+                # If we just synced everything in the last 12 hours and this scheme 
+                # is STILL completely missing from the cache, it means the API 
+                # returned zero records for it (e.g. invalid code or completely closed).
+                # Skip it to prevent infinitely hammering the API for dead schemes.
+                if is_fresh:
+                    continue
+                    
                 schemes_to_fetch.append(code)
                 self.cache.increment_cache_stat("misses")
             else:
@@ -156,8 +163,12 @@ class NavFetcher:
                 
                 # Fetch if the latest data is stale AND the global cache isn't marked as freshly updated
                 needs_update = not is_fresh and days_old > 3
-                # Fetch if the user requested data older than what we currently have in cache
-                needs_history = start_str < first_date
+                
+                # We only need history if the requested start date is older than both:
+                # 1. The first date we have for this scheme
+                # 2. The oldest date we have EVER synced across the entire cache
+                oldest_synced = getattr(self.cache, "oldest_synced_date", "9999-12-31")
+                needs_history = (start_str < first_date) and (start_str < oldest_synced)
                 
                 if needs_update or needs_history:
                     schemes_to_fetch.append(code)
@@ -188,11 +199,8 @@ class NavFetcher:
                         historical_data[date_col] = pd.to_datetime(historical_data[date_col], format="mixed", dayfirst=True, errors="coerce")
                         historical_data = historical_data.dropna(subset=[date_col])
                         
-                        mask = (historical_data[date_col] >= start_date) & (historical_data[date_col] <= end_date)
-                        filtered = historical_data.loc[mask]
-                        
                         records = []
-                        for row in filtered.itertuples(index=False):
+                        for row in historical_data.itertuples(index=False):
                             try:
                                 records.append({
                                     "Scheme_Code": str(code),
@@ -226,12 +234,18 @@ class NavFetcher:
             self.cache.increment_cache_stat("new_data", len(new_api_records))
             new_df = pd.DataFrame(new_api_records)
             self.cache.nav_cache_df = pd.concat([self.cache.nav_cache_df, new_df], ignore_index=True)
-            self.cache.save_nav_cache()
             
             # Re-filter after update
             mask = (self.cache.nav_cache_df["Date"] >= start_str) & (self.cache.nav_cache_df["Date"] <= end_str)
             mask &= self.cache.nav_cache_df["Scheme_Code"].isin(scheme_codes)
             valid_cache = self.cache.nav_cache_df.loc[mask]
 
+        # Always update the globally tracked oldest_synced_date so we don't repeatedly
+        # fetch for history that simply doesn't exist (e.g. fund was incepted later)
+        oldest_synced = getattr(self.cache, "oldest_synced_date", "9999-12-31")
+        if start_str < oldest_synced:
+            self.cache.oldest_synced_date = start_str
+            
+        self.cache.save_nav_cache()
         self.cache.save_metadata_cache()
         return valid_cache
