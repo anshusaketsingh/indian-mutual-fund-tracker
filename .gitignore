@@ -20,3 +20,5 @@ __pycache__/
 # IDEs
 .vscode/
 indian-mutual-fund-tracker.code-workspace
+
+.agents/

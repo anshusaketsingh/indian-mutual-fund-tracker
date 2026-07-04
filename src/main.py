@@ -31,13 +31,7 @@ if sys.prefix != str(venv_dir):
 from src.orchestrator import DataPipeline
 
 def main():
-    # Temp code to keep mac display on during the run
-    if sys.platform == 'darwin':
-        import atexit
-        caffeinate_process = subprocess.Popen(['caffeinate', '-d', '-i'])
-        atexit.register(caffeinate_process.kill)
-        print("☕ Caffeinate started: Keeping display awake for this run...")
-        
+
     # Launch GUI if no arguments are provided
     if len(sys.argv) == 1:
         print("Launching Streamlit GUI...")

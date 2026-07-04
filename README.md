@@ -4,6 +4,18 @@ A highly optimized Python-based toolkit for tracking Indian mutual fund NAV data
 
 ---
 
+## 🌟 Key Features
+
+* **Lightning-Fast Parquet Caching:** Caches over 12,000+ mutual funds and millions of rows of historical NAV locally to drastically reduce API loads.
+* **Intelligent Data Enrichment:** Automatically cleans and parses raw government AMFI metadata into business-ready dimensions:
+  * **Asset Class & Category:** Classifies funds into `Equity`, `Debt`, `Hybrid`, etc., and extracts precise sub-categories (e.g. `Large Cap Fund`).
+  * **Clean Naming:** Automatically strips noise (e.g. "Retail Option Growth") from the `Scheme_Name` using smart Title-casing while retaining the `Raw_Scheme_Name` for reference.
+  * **Plan Properties:** Accurately detects `Investment_Plan` (Direct / Regular / ETF) and `Plan_Type` (Growth / IDCW / Bonus).
+* **Trailing Return Engine:** Automatically looks backwards in time to intelligently inject historical exact-date matching NAVs (`1_Month_Ago_NAV`, `1_Year_Ago_NAV`, `5_Year_Ago_NAV`, etc.) directly into the metadata. This accounts for weekends/holidays and allows you to effortlessly calculate YoY returns in Tableau without complex LOD expressions.
+* **Unified Tableau Export:** Generates a clean, production-ready `.hyper` database joining historical NAVs, enriched metadata, and Indian Stock Market trading holidays seamlessly.
+
+---
+
 ## Project Structure
 
 ```
@@ -93,8 +105,10 @@ flowchart TD
     J -->|Miss| L["src/core/api.py (Rate-Limited AMFI API Wrapper)"]
     L -->|Save New Data| K
     
-    K -->|Data Ready| M["src/exporters/ (Format-Specific Data Generators)"]
-    M -->|Generate File| N[(AllFunds_Daily)]
+    K --> M["src/orchestrator.py (Metadata Enrichment Engine)"]
+    
+    M -->|Data Ready| N["src/exporters/ (Format-Specific Data Generators)"]
+    N -->|Generate File| O[(Unified DB / Output Files)]
 ```
 
 ---

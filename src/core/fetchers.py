@@ -13,7 +13,11 @@ from .utils import (
     parse_date_input,
     validate_date_range,
     normalize_filter,
-    classify_category
+    classify_category,
+    extract_sub_category,
+    extract_plan_type,
+    extract_investment_plan,
+    extract_clean_fund_name
 )
 
 class MetadataFetcher:
@@ -32,17 +36,57 @@ class MetadataFetcher:
             fund_house = scheme_data.get("fund_house", "Unknown")
             if not fund_house or fund_house.strip() == "":
                 fund_house = name.split()[0] if name else "Unknown"
+                
+            import re
+            
+            # Properly format the fund house name (e.g. "quant Mutual Fund" -> "Quant Mutual Fund")
+            # We preserve acronyms (like HDFC, SBI) if they are already uppercase.
+            if fund_house:
+                words = []
+                for w in fund_house.split():
+                    if w.upper() in ["MUTUAL", "FUND"]:
+                        words.append(w.title())
+                    elif w.isupper():
+                        words.append(w)
+                    else:
+                        words.append(w.title())
+                fund_house = " ".join(words)
+
+            scheme_start_dt_info = scheme_data.get("scheme_start_date", "")
+            scheme_start_date = None
+            
+            if isinstance(scheme_start_dt_info, dict):
+                date_str = scheme_start_dt_info.get("date")
+            elif isinstance(scheme_start_dt_info, str):
+                try:
+                    import ast
+                    date_str = ast.literal_eval(scheme_start_dt_info).get("date")
+                except:
+                    date_str = scheme_start_dt_info
+            else:
+                date_str = None
+                
+            if date_str:
+                try:
+                    scheme_start_date = pd.to_datetime(date_str, dayfirst=True).strftime("%Y-%m-%d")
+                except:
+                    pass
 
             fund_info = {
                 "Scheme_Code":           code,
-                "Scheme_Name":           name,
+                "Scheme_Name":           extract_clean_fund_name(name),
+                "Raw_Scheme_Name":       name,
                 "Fund_House":            fund_house,
                 "Scheme_Type":           scheme_data.get("scheme_type", "Unknown"),
                 "Scheme_Category":       scheme_data.get("scheme_category", "Unknown"),
-                "Scheme_Start_Date_Info": scheme_data.get("scheme_start_date", ""),
+                "Fund_Category":         extract_sub_category(scheme_data.get("scheme_category", "")),
+                "Plan_Type":             extract_plan_type(name),
+                "Investment_Plan":       extract_investment_plan(name),
+                "Scheme_Start_Date":     scheme_start_date,
+                "Scheme_Start_Date_Info": str(scheme_start_dt_info),
                 "Current_NAV":           None, 
                 "Last_Updated":          datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Main_Category":         classify_category(scheme_data.get("scheme_category", "")),
+                "Asset_Class":           classify_category(scheme_data.get("scheme_category", "")),
             }
             self.cache.update_metadata_cache(code, scheme_data, {}, fund_info)
             return fund_info
@@ -75,7 +119,7 @@ class MetadataFetcher:
             hit = self.cache.get_cached_metadata(code)
             if hit and hit.get("processed_metadata"):
                 result = hit["processed_metadata"]
-                if not (cats_lower and not any(c in result.get("Main_Category", "").lower() for c in cats_lower)):
+                if not (cats_lower and not any(c in result.get("Asset_Class", "").lower() for c in cats_lower)):
                     fund_data.append(result)
             else:
                 to_fetch[code] = name
@@ -94,7 +138,7 @@ class MetadataFetcher:
                     for future in as_completed(futures):
                         res = future.result()
                         if res:
-                            if not (cats_lower and not any(c in res.get("Main_Category", "").lower() for c in cats_lower)):
+                            if not (cats_lower and not any(c in res.get("Asset_Class", "").lower() for c in cats_lower)):
                                 fund_data.append(res)
                         pbar.update(1)
                         completed += 1
@@ -164,11 +208,47 @@ class NavFetcher:
                 # Fetch if the latest data is stale AND the global cache isn't marked as freshly updated
                 needs_update = not is_fresh and days_old > 3
                 
-                # We only need history if the requested start date is older than both:
-                # 1. The first date we have for this scheme
-                # 2. The oldest date we have EVER synced across the entire cache
-                oldest_synced = getattr(self.cache, "oldest_synced_date", "9999-12-31")
-                needs_history = (start_str < first_date) and (start_str < oldest_synced)
+                # Attempt to parse actual inception date from metadata to prevent fetching history for funds that didn't exist
+                meta_hit = self.cache.get_cached_metadata(code)
+                scheme_start = None
+                if meta_hit and meta_hit.get("processed_metadata"):
+                    pm = meta_hit["processed_metadata"]
+                    if isinstance(pm, str):
+                        import ast
+                        try:
+                            pm = ast.literal_eval(pm)
+                        except:
+                            pm = {}
+                    
+                    start_info = pm.get("Scheme_Start_Date_Info")
+                    date_str = None
+                    if isinstance(start_info, dict):
+                        date_str = start_info.get("date")
+                    elif isinstance(start_info, str):
+                        try:
+                            import ast
+                            date_str = ast.literal_eval(start_info).get("date")
+                        except:
+                            date_str = start_info
+                    
+                    if date_str:
+                        try:
+                            scheme_start = pd.to_datetime(date_str, dayfirst=True).strftime("%Y-%m-%d")
+                        except:
+                            pass
+
+                if scheme_start:
+                    # If our earliest record is within 7 days of the official inception date, we have all the history!
+                    first_dt = datetime.strptime(first_date, "%Y-%m-%d")
+                    scheme_start_dt = datetime.strptime(scheme_start, "%Y-%m-%d")
+                    if (first_dt - scheme_start_dt).days <= 7:
+                        needs_history = False
+                    else:
+                        needs_history = (start_str < first_date)
+                else:
+                    # Fallback to global oldest_synced if we don't have inception date
+                    oldest_synced = getattr(self.cache, "oldest_synced_date", "9999-12-31")
+                    needs_history = (start_str < first_date) and (start_str < oldest_synced)
                 
                 if needs_update or needs_history:
                     schemes_to_fetch.append(code)
