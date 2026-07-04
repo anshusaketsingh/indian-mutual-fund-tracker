@@ -1,6 +1,20 @@
-*.xlsx
-*.hyper
-nav_data_cache.pkl
+# Data and Output directories
+data/
+output/
+
+# Logs
+hyperd.log
+
+# MacOS
 .DS_Store
 **/.DS_Store
-data/cache_metadata.json
+
+# Virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+indian-mutual-fund-tracker.code-workspace
